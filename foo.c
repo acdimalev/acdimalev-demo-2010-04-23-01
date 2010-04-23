@@ -1,6 +1,8 @@
 #include "SDL.h"
 #include <cairo.h>
 
+#include <math.h>
+
 int fps = 30;
 int w = 320;
 int h = 240;
@@ -30,11 +32,11 @@ int main(int argc, char **argv) {
   cairo_t *cr;
 
   Uint8 *keystate;
-  Uint32 next_frame, now;
+  Uint32 next_frame;
 
   float aspect = 1.0 * w/h;
 
-  mat m; vec v;
+  mat m;
 
   int running;
 
@@ -68,7 +70,11 @@ int main(int argc, char **argv) {
 
   /* Game Logic */
   running = 1;
-  mat_identity(m);
+  {
+    float a = M_PI / 4.0;
+    mat_identity(m);
+    m[11] = 8;
+  }
 
   SDL_LockSurface(sdl_surface);
   while (running) {
@@ -82,22 +88,22 @@ int main(int argc, char **argv) {
       vec v;
       float x, y;
 
-      v[0] = -1; v[1] = -1; v[2] = 8;
+      v[0] = -1; v[1] = -1; v[2] = 0; v[3] = 1;
       vec_mat_mul(v, m);
       x = v[0] / v[2]; y = v[1] / v[2];
       cairo_move_to(cr, x, y);
 
-      v[0] =  1; v[1] = -1; v[2] = 8;
+      v[0] =  1; v[1] = -1; v[2] = 0; v[3] = 1;
       vec_mat_mul(v, m);
       x = v[0] / v[2]; y = v[1] / v[2];
       cairo_line_to(cr, x, y);
 
-      v[0] =  1; v[1] =  1; v[2] = 8;
+      v[0] =  1; v[1] =  1; v[2] = 0; v[3] = 1;
       vec_mat_mul(v, m);
       x = v[0] / v[2]; y = v[1] / v[2];
       cairo_line_to(cr, x, y);
 
-      v[0] = -1; v[1] =  1; v[2] = 8;
+      v[0] = -1; v[1] =  1; v[2] = 0; v[3] = 1;
       vec_mat_mul(v, m);
       x = v[0] / v[2]; y = v[1] / v[2];
       cairo_line_to(cr, x, y);
@@ -113,11 +119,14 @@ int main(int argc, char **argv) {
     SDL_LockSurface(sdl_surface);
 
     /* Delay */
-    now = SDL_GetTicks();
-    if (now < next_frame) {
-      SDL_Delay(next_frame - now);
+    {
+      Uint32 now;
+      now = SDL_GetTicks();
+      if (now < next_frame) {
+        SDL_Delay(next_frame - now);
+      }
+      next_frame = next_frame + 1024.0 / fps;
     }
-    next_frame = next_frame + 1024.0 / fps;
 
     /* Game Logic */
     SDL_PumpEvents();
