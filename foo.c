@@ -10,12 +10,38 @@ float scale = 1.0;
 
 typedef float vec[4];
 typedef float mat[4 * 4];
+typedef float *mat_p;
 
 void mat_identity(mat m) {
-  m[ 0] = 1; m[ 1] = 0; m[ 2] = 0; m[ 3] = 0;
-  m[ 4] = 0; m[ 5] = 1; m[ 6] = 0; m[ 7] = 0;
-  m[ 8] = 0; m[ 9] = 0; m[10] = 1; m[11] = 0;
-  m[12] = 0; m[13] = 0; m[14] = 0; m[15] = 1;
+  int i;
+
+  for (i = 0; i < 16; i = i + 1) {
+    m[i] = 0;
+  }
+  m[ 0] = 1; m[ 5] = 1; m[10] = 1; m[15] = 1;
+}
+
+void mat_load(mat m, mat n) {
+  int i;
+
+  for (i = 0; i < 16; i = i + 1) {
+    m[i] = n[i];
+  }
+}
+
+void mat_mul(mat m, mat n) {
+  mat o;
+  int i, j;
+
+  for (j = 0; j < 4; j = j + 1) {
+    for (i = 0; i < 4; i = i + 1) {
+      o[4*j+i] = m[4*j+0] * n[4*0+i] + m[4*j+1] * n[4*1+i]
+        + m[4*j+2] * n[4*2+i] + m[4*j+3] * n[4*3+i];
+    }
+  }
+  for (i = 0; i < 16; i = i + 1) {
+    m[i] = o[i];
+  }
 }
 
 void vec_mat_mul(vec v, mat m) {
@@ -36,9 +62,10 @@ int main(int argc, char **argv) {
 
   float aspect = 1.0 * w/h;
 
-  mat m;
+  mat matrix;
 
   int running;
+  float angle;
 
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
   SDL_ShowCursor(0);
@@ -71,12 +98,14 @@ int main(int argc, char **argv) {
   /* Game Logic */
   running = 1;
   {
+    mat_p m = matrix;
     float a = M_PI / 4.0;
     mat_identity(m);
     m[11] = 8;
     m[ 5] =  cos(a); m[ 6] = -sin(a);
     m[ 9] =  sin(a); m[10] =  cos(a);
   }
+  angle = 0;
 
   SDL_LockSurface(sdl_surface);
   while (running) {
@@ -87,8 +116,15 @@ int main(int argc, char **argv) {
     cairo_set_operator(cr, CAIRO_OPERATOR_OVER);
 
     {
-      vec v;
-      float x, y;
+      mat m, n; vec v;
+      float x, y, a = angle;
+
+      mat_identity(n);
+      n[0] =  cos(a); n[1] = -sin(a);
+      n[4] =  sin(a); n[5] =  cos(a);
+
+      mat_load(m, matrix);
+      mat_mul(m, n);
 
       v[0] = -1; v[1] = -1; v[2] = 0; v[3] = 1;
       vec_mat_mul(v, m);
@@ -136,6 +172,8 @@ int main(int argc, char **argv) {
     if (keystate[SDLK_q]) {
       running = 0;
     }
+
+    angle = angle + M_PI / 2.0 / fps;
 
   }
   SDL_UnlockSurface(sdl_surface);
