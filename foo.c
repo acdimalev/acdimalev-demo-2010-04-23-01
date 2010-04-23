@@ -74,6 +74,8 @@ int main(int argc, char **argv) {
     float a = M_PI / 4.0;
     mat_identity(m);
     m[11] = 8;
+    m[ 5] =  cos(a); m[ 6] = -sin(a);
+    m[ 9] =  sin(a); m[10] =  cos(a);
   }
 
   SDL_LockSurface(sdl_surface);
